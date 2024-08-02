@@ -11,13 +11,13 @@
 ##
 ## ---------------------------
 ##
-## Notes:
+## Notes: This code compares lmms and fe panel models
 ##   
 ##
 ## ---------------------------
 
 
-
+## packages
 librarian::shelf(sjPlot, ggeffects, patchwork, tidyverse, 
                  lme4, plotrix, ggpubr, mgcv, nlme, fixest, plotrix, egg, ggpmisc,
                  mvtnorm, clubSandwich, rasterVis, broom.mixed, scales,RColorBrewer)
@@ -35,7 +35,7 @@ paneldat <- rwidat %>%
   left_join(demdat)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Panel models
+# FE panel models
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fe_mod = feols(value ~ tmax + ppt | plot_id_needle,
@@ -48,20 +48,11 @@ fe_mod_lag = feols(value ~ tmax +  laggedtmax + ppt +  laggedprecip | plot_id_ne
 summary(fe_mod_lag)
 
 
-fe_mod_lag5 = feols(value ~ lag(tmax, 5) + lag(ppt, 5)| plot_id_needle,
-                    data= paneldat)
-summary(fe_mod_lag5)
-
-
 fe_lm_lag = feols(value ~ tmax +  laggedtmax + ppt +  laggedprecip + factor(plot_id_needle),
                    data = paneldat)
 
 summary(fe_lm_lag)
 
-fe_mod_lag_RS = feols(value ~ tmax:plot_id_needle +  laggedtmax:plot_id_needle + ppt:plot_id_needle +  laggedprecip:plot_id_needle | plot_id_needle,
-                   data = paneldat)
-
-summary(fe_mod_lag_RS)
 
 fe_RS <- lm(value ~ (tmax +  ppt + laggedtmax + laggedprecip) * plot_id_needle,
                           data = paneldat)
@@ -83,30 +74,19 @@ lmm_mod_lag_Rslopes = lmer(value ~ tmax +  laggedtmax + ppt +  laggedprecip +
                              (1 + ppt | plot_id_needle)+ (1 + laggedprecip | plot_id_needle),
                    data = paneldat)
 
-#lm_mod_elev = lmer(value ~ tmax +  ppt + elevation + (1|plot_id_needle), data = paneldat)
 lmm_mod_elev = lmer(value ~ tmax +  laggedtmax + ppt +  laggedprecip + elevation + (1|plot_id_needle), data = paneldat)
 
-#lmm_mod_slope = lmer(value ~ tmax +  ppt + slope + (1|plot_id_needle), data = paneldat)
 lmm_mod_slope = lmer(value ~ tmax +  laggedtmax + ppt +  laggedprecip + slope + (1|plot_id_needle), data = paneldat)
 
-#lmm_mod_elevslope = lmer(value ~ tmax +  ppt + slope + elevation+ (1|plot_id_needle), data = paneldat)
 lmm_mod_elevslope = lmer(value ~ tmax +  laggedtmax + ppt +  laggedprecip + slope + elevation+ aspect+(1|plot_id_needle), data = paneldat)
-
-# lmm_mod_elevslope_Rslopes = lmer(value ~ tmax +  laggedtmax + ppt +  laggedprecip + slope + elevation+ aspect +
-#                                    (1 + tmax | plot_id_needle)+ (1 + laggedtmax | plot_id_needle) + 
-#                                    (1 + ppt | plot_id_needle)+ (1 + laggedprecip | plot_id_needle), data = paneldat)
 
 lmm_mod_elevslope_Rslopes = lmer(value ~ tmax +  laggedtmax + ppt +  laggedprecip + slope + elevation+ aspect+
                                    (1 + tmax | plot_id_needle)+ (1 + laggedtmax | plot_id_needle) + 
                                    (1 + ppt | plot_id_needle)+ (1 + laggedprecip | plot_id_needle), data = paneldat)
 
-#lmm_mod_elevslope_Rslopes = lmer(value ~ tmax*plot_id_needle +  laggedtmax*plot_id_needle + ppt*plot_id_needle +  laggedprecip*plot_id_needle+ slope + elevation+ aspect+(1|plot_id_needle), data = paneldat)
-# lm_mod_lag_square = lmer(value ~ tmax + I(tmax^2) + laggedtmax+ I(laggedtmax^2) + 
-#                             ppt + I(ppt^2) + laggedprecip + 
-#                             I(laggedprecip^2)+  (1|plot_id_needle), data = paneldat)
 
-
-tab_model(fe_mod, fe_mod_lag, lmm_mod, lmm_mod_lag, lmm_mod_lag_Rslopes, lmm_mod_elevslope, lmm_mod_elevslope_Rslopes, show.aic = T, digits = 4)
+tab_model(fe_mod, fe_mod_lag, lmm_mod, lmm_mod_lag, lmm_mod_lag_Rslopes, 
+          lmm_mod_elevslope, lmm_mod_elevslope_Rslopes, show.aic = T, digits = 4)
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -116,17 +96,6 @@ tab_model(fe_mod, fe_mod_lag, lmm_mod, lmm_mod_lag, lmm_mod_lag_Rslopes, lmm_mod
 #
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-# Extract fixed effects estimates and confidence intervals
-# model_list <- list(fe_mod=fe_mod, fe_mod_square = fe_mod_square, fe_mod_lag = fe_mod_lag, 
-#                fe_mod_lag_square = fe_mod_lag_square,
-#                lmm_mod = lmm_mod, lmm_mod_square = lmm_mod_square, 
-#                lmm_mod_lag = lmm_mod_lag, lmm_mod_lag_square = lmm_mod_lag_square)
-
-# model_list <- list(fe_mod=fe_mod, fe_mod_lag = fe_mod_lag,fe_lag_RS = fe_RS,
-#                lmm_mod = lmm_mod, lmm_mod_lag = lmm_mod_lag,
-#                lmm_mod_elev = lmm_mod_elev, lmm_mod_slope=lmm_mod_slope, lmm_mod_elevslope = lmm_mod_elevslope,
-#                lmm_mod_elevslope_Rslopes = lmm_mod_elevslope_Rslopes, lmm_mod_lag_Rslopes = lmm_mod_lag_Rslopes)
 
 model_list <- list(fe=fe_mod, fe_lag = fe_mod_lag,fe_lm_lag = fe_lm_lag, fe_lag_RS = fe_RS,
                    lmm= lmm_mod, lmm_lag = lmm_mod_lag,lmm_lag_Rslopes = lmm_mod_lag_Rslopes,
